@@ -9,6 +9,12 @@ IdentityServer3.EntityFramework is a persistence layer for IdentityServer v3 con
 
 NOTE: Assuming repository is checked out to C:\Development\MRI.IdentityServer3.EntityFramework folder
 
+mkdir C:\Development\MRI.IdentityServer3.EntityFramework\distribution
+
+mkdir C:\Development\MRI.IdentityServer3.EntityFramework\distribution\lib
+
+mkdir C:\Development\MRI.IdentityServer3.EntityFramework\distribution\lib\net45
+
 & "c:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe" /nologo C:\Development\MRI.IdentityServer3.EntityFramework\Source\IdentityServer3.EntityFramework.sln /p:Configuration=Release /p:TargetFrameworkVersion=v4.5
 
 copy-item c:\Development\MRI.IdentityServer3.EntityFramework\build\IdentityServer3.EntityFramework.dll c:\Development\MRI.IdentityServer3.EntityFramework\distribution\lib\net45
