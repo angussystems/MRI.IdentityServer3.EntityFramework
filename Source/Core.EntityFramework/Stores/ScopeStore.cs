@@ -46,25 +46,29 @@ namespace IdentityServer3.EntityFramework
 
         public async Task<IEnumerable<IdentityServer3.Core.Models.Scope>> FindScopesAsync(IEnumerable<string> scopeNames)
         {
-            var scopes =
-                from s in context.Scopes.Include(x=>x.ScopeClaims).Include(x=>x.ScopeSecrets)
-                select s;
-                
-            if (scopeNames != null && scopeNames.Any())
-            {
-                scopes = from s in scopes
-                            where scopeNames.Contains(s.Name)
-                            select s;
-            }
-
             Scope[] list = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                list = scopes.ToArray();
-            }
-            else
-            {
-                list = await scopes.ToArrayAsync();
+                var scopes =
+                from s in context.Scopes.Include(x => x.ScopeClaims).Include(x => x.ScopeSecrets)
+                select s;
+
+                if (scopeNames != null && scopeNames.Any())
+                {
+                    scopes = from s in scopes
+                             where scopeNames.Contains(s.Name)
+                             select s;
+                }
+
+                if (options != null && options.SynchronousReads)
+                {
+                    list = scopes.ToArray();
+                }
+                else
+                {
+                    list = await scopes.ToArrayAsync();
+                }
+                transaction.Commit();
             }
 
             return list.Select(x => x.ToModel());
@@ -72,26 +76,31 @@ namespace IdentityServer3.EntityFramework
 
         public async Task<IEnumerable<IdentityServer3.Core.Models.Scope>> GetScopesAsync(bool publicOnly = true)
         {
-            var scopes =
-                from s in context.Scopes.Include(x=>x.ScopeClaims).Include(x=>x.ScopeSecrets)
-                select s;
-                
-            if (publicOnly)
-            {
-                scopes = from s in scopes
-                            where s.ShowInDiscoveryDocument == true
-                            select s;
-            }
-
             Scope[] list = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                list = scopes.ToArray();
+                var scopes =
+                from s in context.Scopes.Include(x => x.ScopeClaims).Include(x => x.ScopeSecrets)
+                select s;
+
+                if (publicOnly)
+                {
+                    scopes = from s in scopes
+                             where s.ShowInDiscoveryDocument == true
+                             select s;
+                }
+
+                if (options != null && options.SynchronousReads)
+                {
+                    list = scopes.ToArray();
+                }
+                else
+                {
+                    list = await scopes.ToArrayAsync();
+                }
+                transaction.Commit();
             }
-            else
-            {
-                list = await scopes.ToArrayAsync();
-            }
+            
             return list.Select(x => x.ToModel());
         }
     }

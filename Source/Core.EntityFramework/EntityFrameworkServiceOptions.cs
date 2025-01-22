@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using IdentityServer3.Core.Configuration;
 using IdentityServer3.Core.Models;
@@ -32,5 +33,10 @@ namespace IdentityServer3.EntityFramework
         public string Schema { get; set; }
 
         public bool SynchronousReads { get; set; }
+        
+        /// <summary>
+        /// The DB transaction isolation level to use for all read and writes. Defaults to ReadCommitted.
+        /// </summary>
+        public IsolationLevel TransactionIsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
     }
 }

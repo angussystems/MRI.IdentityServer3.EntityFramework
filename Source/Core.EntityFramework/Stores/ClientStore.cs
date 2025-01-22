@@ -45,7 +45,10 @@ namespace IdentityServer3.EntityFramework
 
         public async Task<IdentityServer3.Core.Models.Client> FindClientByIdAsync(string clientId)
         {
-            var query = context.Clients
+            Client client = null;
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
+            {
+                var query = context.Clients
                     .Include(x => x.ClientSecrets)
                     .Include(x => x.RedirectUris)
                     .Include(x => x.PostLogoutRedirectUris)
@@ -55,18 +58,19 @@ namespace IdentityServer3.EntityFramework
                     .Include(x => x.AllowedCustomGrantTypes)
                     .Include(x => x.AllowedCorsOrigins);
 
-            Client client = null;
-            if (options != null && options.SynchronousReads)
-            {
-                client = query.SingleOrDefault(x => x.ClientId == clientId && x.Enabled);
-            }
-            else
-            {
-                client = await query.SingleOrDefaultAsync(x => x.ClientId == clientId && x.Enabled);
+                if (options != null && options.SynchronousReads)
+                {
+                    client = query.SingleOrDefault(x => x.ClientId == clientId && x.Enabled);
+                }
+                else
+                {
+                    client = await query.SingleOrDefaultAsync(x => x.ClientId == clientId && x.Enabled);
+                }
+                transaction.Commit();
             }
 
             IdentityServer3.Core.Models.Client model = client.ToModel();
-            return model;    
+            return model;
         }
     }
 }

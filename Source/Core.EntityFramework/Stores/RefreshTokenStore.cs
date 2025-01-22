@@ -37,31 +37,35 @@ namespace IdentityServer3.EntityFramework
         public override async Task StoreAsync(string key, RefreshToken value)
         {
             Entities.Token token = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                token = context.Tokens.Find(key, tokenType);
-            }
-            else
-            {
-                token = await context.Tokens.FindAsync(key, tokenType);
-            }
-
-            if (token == null)
-            {
-                token = new Entities.Token
+                if (options != null && options.SynchronousReads)
                 {
-                    Key = key,
-                    SubjectId = value.SubjectId,
-                    ClientId = value.ClientId,
-                    TokenType = tokenType
-                };
-                context.Tokens.Add(token);
+                    token = context.Tokens.Find(key, tokenType);
+                }
+                else
+                {
+                    token = await context.Tokens.FindAsync(key, tokenType);
+                }
+
+                if (token == null)
+                {
+                    token = new Entities.Token
+                    {
+                        Key = key,
+                        SubjectId = value.SubjectId,
+                        ClientId = value.ClientId,
+                        TokenType = tokenType
+                    };
+                    context.Tokens.Add(token);
+                }
+
+                token.JsonCode = ConvertToJson(value);
+                token.Expiry = value.CreationTime.AddSeconds(value.LifeTime);
+
+                await context.SaveChangesAsync();
+                transaction.Commit();
             }
-
-            token.JsonCode = ConvertToJson(value);
-            token.Expiry = value.CreationTime.AddSeconds(value.LifeTime);
-
-            await context.SaveChangesAsync();
         }
     }
 }

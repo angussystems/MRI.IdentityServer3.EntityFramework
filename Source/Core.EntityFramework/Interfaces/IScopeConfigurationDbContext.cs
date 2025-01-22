@@ -22,5 +22,6 @@ namespace IdentityServer3.EntityFramework
     public interface IScopeConfigurationDbContext
     {
         DbSet<Scope> Scopes { get; set; }
+        Database Database { get; }
     }
 }
