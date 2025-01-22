@@ -83,13 +83,17 @@ namespace IdentityServer3.EntityFramework
         public async Task<T> GetAsync(string key)
         {
             Entities.Token token = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                token = context.Tokens.Find(key, tokenType);
-            }
-            else
-            {
-                token = await context.Tokens.FindAsync(key, tokenType);
+                if (options != null && options.SynchronousReads)
+                {
+                    token = context.Tokens.Find(key, tokenType);
+                }
+                else
+                {
+                    token = await context.Tokens.FindAsync(key, tokenType);
+                }
+                transaction.Commit();
             }
 
             if (token == null || token.Expiry < DateTimeOffset.UtcNow)
@@ -103,36 +107,44 @@ namespace IdentityServer3.EntityFramework
         public async Task RemoveAsync(string key)
         {
             Entities.Token token = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                token = context.Tokens.Find(key, tokenType);
-            }
-            else
-            {
-                token = await context.Tokens.FindAsync(key, tokenType);
-            }
+                if (options != null && options.SynchronousReads)
+                {
+                    token = context.Tokens.Find(key, tokenType);
+                }
+                else
+                {
+                    token = await context.Tokens.FindAsync(key, tokenType);
+                }
 
-            if (token != null)
-            {
-                context.Tokens.Remove(token);
-                await context.SaveChangesAsync();
+                if (token != null)
+                {
+                    context.Tokens.Remove(token);
+                    await context.SaveChangesAsync();
+                }
+                transaction.Commit();
             }
         }
 
         public async Task<IEnumerable<ITokenMetadata>> GetAllAsync(string subject)
         {
             Entities.Token[] tokens = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                tokens = context.Tokens.Where(x =>
-                    x.SubjectId == subject &&
-                    x.TokenType == tokenType).ToArray();
-            }
-            else
-            {
-                tokens = await context.Tokens.Where(x => 
-                    x.SubjectId == subject &&
-                    x.TokenType == tokenType).ToArrayAsync();
+                if (options != null && options.SynchronousReads)
+                {
+                    tokens = context.Tokens.Where(x =>
+                        x.SubjectId == subject &&
+                        x.TokenType == tokenType).ToArray();
+                }
+                else
+                {
+                    tokens = await context.Tokens.Where(x =>
+                        x.SubjectId == subject &&
+                        x.TokenType == tokenType).ToArrayAsync();
+                }
+                transaction.Commit();
             }
 
             var results = tokens.Select(x=>ConvertFromJson(x.JsonCode)).ToArray();
@@ -142,23 +154,27 @@ namespace IdentityServer3.EntityFramework
         public async Task RevokeAsync(string subject, string client)
         {
             Entities.Token[] tokens = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                tokens = context.Tokens.Where(x =>
-                    x.SubjectId == subject &&
-                    x.ClientId == client &&
-                    x.TokenType == tokenType).ToArray();
-            }
-            else
-            {
-                tokens = await context.Tokens.Where(x => 
-                    x.SubjectId == subject && 
-                    x.ClientId == client && 
-                    x.TokenType == tokenType).ToArrayAsync();
-            }
+                if (options != null && options.SynchronousReads)
+                {
+                    tokens = context.Tokens.Where(x =>
+                        x.SubjectId == subject &&
+                        x.ClientId == client &&
+                        x.TokenType == tokenType).ToArray();
+                }
+                else
+                {
+                    tokens = await context.Tokens.Where(x =>
+                        x.SubjectId == subject &&
+                        x.ClientId == client &&
+                        x.TokenType == tokenType).ToArrayAsync();
+                }
 
-            context.Tokens.RemoveRange(tokens);
-            await context.SaveChangesAsync();
+                context.Tokens.RemoveRange(tokens);
+                await context.SaveChangesAsync();
+                transaction.Commit();
+            }
         }
 
         public abstract Task StoreAsync(string key, T value);

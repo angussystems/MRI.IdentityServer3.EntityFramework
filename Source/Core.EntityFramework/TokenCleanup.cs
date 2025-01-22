@@ -100,14 +100,18 @@ namespace IdentityServer3.EntityFramework
 
                 using (var db = CreateOperationalDbContext())
                 {
-                    var query =
+                    using (var transaction = db.Database.BeginTransaction(options.TransactionIsolationLevel))
+                    {
+                        var query =
                         from token in db.Tokens
                         where token.Expiry < DateTimeOffset.UtcNow
                         select token;
 
-                    db.Tokens.RemoveRange(query);
+                        db.Tokens.RemoveRange(query);
 
-                    await db.SaveChangesAsync();
+                        await db.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
             }
             catch(Exception ex)

@@ -44,8 +44,12 @@ namespace IdentityServer3.EntityFramework
                 TokenType = this.tokenType
             };
 
-            context.Tokens.Add(efToken);
-            await context.SaveChangesAsync();
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
+            {
+                context.Tokens.Add(efToken);
+                await context.SaveChangesAsync();
+                transaction.Commit();
+            }
         }
     }
 }

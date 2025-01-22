@@ -22,5 +22,6 @@ namespace IdentityServer3.EntityFramework
     public interface IClientConfigurationDbContext
     {
         DbSet<Client> Clients { get; set; }
+        Database Database { get; }
     }
 }

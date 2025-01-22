@@ -47,13 +47,17 @@ namespace IdentityServer3.EntityFramework
         public async Task<IdentityServer3.Core.Models.Consent> LoadAsync(string subject, string client)
         {
             Consent found = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                found = context.Consents.Find(subject, client);
-            }
-            else
-            {
-                found = await context.Consents.FindAsync(subject, client);
+                if (options != null && options.SynchronousReads)
+                {
+                    found = context.Consents.Find(subject, client);
+                }
+                else
+                {
+                    found = await context.Consents.FindAsync(subject, client);
+                }
+                transaction.Commit();
             }
 
             if (found == null)
@@ -74,48 +78,55 @@ namespace IdentityServer3.EntityFramework
         public async Task UpdateAsync(IdentityServer3.Core.Models.Consent consent)
         {
             Consent item = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                item = context.Consents.Find(consent.Subject, consent.ClientId);
-            }
-            else
-            {
-                item = await context.Consents.FindAsync(consent.Subject, consent.ClientId);
-            }
+                if (options != null && options.SynchronousReads)
+                {
+                    item = context.Consents.Find(consent.Subject, consent.ClientId);
+                }
+                else
+                {
+                    item = await context.Consents.FindAsync(consent.Subject, consent.ClientId);
+                }
 
-            if (item == null)
-            {
-                item = new Entities.Consent 
-                { 
-                    Subject = consent.Subject, 
-                    ClientId = consent.ClientId 
-                };
-                context.Consents.Add(item);
-            }
-                
-            if (consent.Scopes == null || !consent.Scopes.Any())
-            {
-                context.Consents.Remove(item);
-            }
+                if (item == null)
+                {
+                    item = new Entities.Consent
+                    {
+                        Subject = consent.Subject,
+                        ClientId = consent.ClientId
+                    };
+                    context.Consents.Add(item);
+                }
 
-            item.Scopes = StringifyScopes(consent.Scopes);
+                if (consent.Scopes == null || !consent.Scopes.Any())
+                {
+                    context.Consents.Remove(item);
+                }
 
-            await context.SaveChangesAsync();
+                item.Scopes = StringifyScopes(consent.Scopes);
+
+                await context.SaveChangesAsync();
+                transaction.Commit();
+            }
         }
 
         public async Task<IEnumerable<IdentityServer3.Core.Models.Consent>> LoadAllAsync(string subject)
         {
             Consent[] found = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                found = context.Consents.Where(x => x.Subject == subject).ToArray();
-            }
-            else
-            {
-                found = await context.Consents.Where(x => x.Subject == subject).ToArrayAsync();
+                if (options != null && options.SynchronousReads)
+                {
+                    found = context.Consents.Where(x => x.Subject == subject).ToArray();
+                }
+                else
+                {
+                    found = await context.Consents.Where(x => x.Subject == subject).ToArrayAsync();
+                }
+                transaction.Commit();
             }
 
-            
             var results = found.Select(x=>new IdentityServer3.Core.Models.Consent{
                 Subject = x.Subject, 
                 ClientId = x.ClientId, 
@@ -148,19 +159,23 @@ namespace IdentityServer3.EntityFramework
         public async Task RevokeAsync(string subject, string client)
         {
             Consent found = null;
-            if (options != null && options.SynchronousReads)
+            using (var transaction = context.Database.BeginTransaction(options.TransactionIsolationLevel))
             {
-                found = context.Consents.Find(subject, client);
-            }
-            else
-            {
-                found = await context.Consents.FindAsync(subject, client);
-            }
+                if (options != null && options.SynchronousReads)
+                {
+                    found = context.Consents.Find(subject, client);
+                }
+                else
+                {
+                    found = await context.Consents.FindAsync(subject, client);
+                }
 
-            if (found != null)
-            {
-                context.Consents.Remove(found);
-                await context.SaveChangesAsync();
+                if (found != null)
+                {
+                    context.Consents.Remove(found);
+                    await context.SaveChangesAsync();
+                }
+                transaction.Commit();
             }
         }
     }

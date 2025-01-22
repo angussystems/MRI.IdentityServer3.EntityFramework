@@ -26,6 +26,8 @@ namespace IdentityServer3.EntityFramework
         DbSet<Consent> Consents { get; set; }
         DbSet<Token> Tokens { get; set; }
 
+        Database Database { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
